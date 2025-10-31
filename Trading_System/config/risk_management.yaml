@@ -1,0 +1,235 @@
+# Risk Management Configuration
+# ================================
+
+# Account Risk Settings
+account:
+  initial_capital: 100000  # USD
+  currency: "USD"
+  
+  # Maximum risk per trade
+  max_risk_per_trade_percent: 2.0  # 2% of account
+  max_risk_per_trade_amount: 2000  # USD
+  
+  # Maximum portfolio risk
+  max_portfolio_risk_percent: 10.0  # 10% of account
+  max_drawdown_percent: 5.0  # Maximum allowed drawdown
+  
+  # Daily limits
+  max_daily_loss_percent: 3.0  # Stop trading if daily loss exceeds 3%
+  max_daily_loss_amount: 3000  # USD
+
+# Position Sizing
+position_sizing:
+  method: "risk_based"  # Options: fixed, risk_based, kelly, volatility_adjusted
+  
+  # Risk-based sizing
+  risk_based:
+    risk_per_trade: 2.0  # Percentage of account to risk per trade
+    
+  # Fixed sizing
+  fixed:
+    shares_per_trade: 100
+    
+  # Kelly Criterion
+  kelly:
+    fraction: 0.25  # Use 25% of Kelly suggestion (conservative)
+    
+  # Volatility adjusted
+  volatility_adjusted:
+    target_volatility: 0.15  # 15% annualized
+    lookback_period: 20  # Days
+
+# Stop Loss Settings (OPTIMIZED)
+stop_loss:
+  enabled: true
+  type: "atr"  # Changed to ATR - more dynamic
+  
+  # Percentage-based stop
+  percentage:
+    stop_percent: 2.5  # INCREASED from 1% - less premature stops
+    
+  # ATR-based stop (NOW ACTIVE)
+  atr:
+    multiplier: 2.5  # INCREASED from 2.0 - wider stop
+    period: 14
+    
+  # Fixed dollar amount
+  fixed:
+    amount: 500  # USD per position
+    
+  # Trailing stop (OPTIMIZED)
+  trailing:
+    enabled: true
+    activation_percent: 2.0  # INCREASED from 1.5% - let it run more
+    trail_percent: 1.0  # INCREASED from 0.75% - wider trail
+
+# Take Profit Settings (OPTIMIZED)
+take_profit:
+  enabled: true
+  type: "ratio"  # Options: ratio, percentage, fixed, target
+  
+  # Risk-reward ratio
+  ratio:
+    reward_risk_ratio: 3.0  # INCREASED from 2.0 - aim for bigger wins
+    
+  # Percentage-based target
+  percentage:
+    profit_percent: 5.0  # INCREASED from 3% - let winners run
+    
+  # Partial profit taking (OPTIMIZED)
+  partial_exits:
+    enabled: true
+    levels:
+      - percent: 2.5   # INCREASED from 1.5%
+        exit_size: 0.25  # REDUCED from 0.33 - keep more
+      - percent: 4.0   # INCREASED from 2.5%
+        exit_size: 0.25  # REDUCED from 0.33
+      # Remaining 50% stays until final target or stop - LET WINNERS RUN!
+
+# Position Limits
+position_limits:
+  max_positions: 8  # Increased from 5 to match trading_config.yaml
+  max_positions_per_symbol: 1
+  max_position_size_percent: 12.0  # Reduced to 12% (8 x 12% = 96% max exposure)
+  max_position_size_amount: 12000  # Reduced accordingly
+  
+  # Sector exposure
+  max_sector_exposure_percent: 30.0  # Max 30% in one sector
+  
+  # Correlation limits
+  max_correlation: 0.7  # Don't take positions with correlation > 0.7
+
+# Trading Rules
+trading_rules:
+  # Loss limits
+  max_consecutive_losses: 3  # Stop trading after 3 consecutive losses
+  cool_down_period: 24  # Hours to wait after hitting loss limit
+  
+  # Time-based rules
+  no_trade_first_minutes: 15  # Avoid first 15 minutes
+  no_trade_last_minutes: 15   # Avoid last 15 minutes
+  
+  # Volatility rules
+  max_volatility_percentile: 95  # Don't trade if volatility > 95th percentile
+  min_volatility_percentile: 5   # Don't trade if volatility < 5th percentile
+
+# Drawdown Management
+drawdown:
+  # Drawdown levels and actions
+  levels:
+    - threshold: 2.0  # 2% drawdown
+      action: "alert"
+      
+    - threshold: 3.5  # 3.5% drawdown
+      action: "reduce_size"
+      size_reduction: 0.5  # Reduce position size by 50%
+      
+    - threshold: 5.0  # 5% drawdown
+      action: "stop_trading"
+      cool_down_hours: 48
+  
+  # Recovery settings
+  recovery:
+    required_profit_streak: 3  # Need 3 winning trades to resume full size
+    gradual_increase: true
+    increase_increment: 0.25  # Increase size by 25% each winning trade
+
+# Margin and Leverage
+margin:
+  use_margin: false  # Start without margin
+  max_leverage: 1.0  # 1x = no leverage
+  margin_call_buffer: 0.3  # Maintain 30% buffer above margin requirement
+
+# Risk Metrics Monitoring
+monitoring:
+  calculate_var: true  # Value at Risk
+  var_confidence: 0.95  # 95% confidence level
+  var_period: 1  # 1-day VaR
+  
+  calculate_cvar: true  # Conditional VaR (Expected Shortfall)
+  
+  track_beta: true
+  track_sharpe: true
+  track_sortino: true
+  
+  # Alert thresholds
+  alerts:
+    sharpe_below: 0.5
+    sortino_below: 0.7
+    max_beta: 1.5
+
+# Emergency Controls
+emergency:
+  # Kill switch - close all positions
+  enable_kill_switch: true
+  kill_switch_triggers:
+    - type: "drawdown"
+      threshold: 7.0  # 7% drawdown
+    - type: "daily_loss"
+      threshold: 5.0  # 5% daily loss
+    - type: "manual"  # Manual trigger
+  
+  # Panic mode
+  panic_mode:
+    enabled: true
+    triggers:
+      - "market_crash"  # Defined as SPY down > 3% in day
+      - "technical_failure"
+    action: "close_all_positions"
+
+# Extended Hours Risk Management (More Conservative)
+extended_hours:
+  enabled: true
+  
+  # More conservative position limits for extended hours
+  position_limits:
+    max_positions: 3  # Reduced from 8 to 3 for extended hours
+    max_position_size_percent: 8.0  # Reduced from 12% to 8%
+    max_position_size_amount: 8000  # Reduced accordingly
+    max_total_exposure_percent: 24.0  # Max 24% total exposure (3 x 8%)
+  
+  # Stricter stop losses for extended hours
+  stop_loss:
+    mandatory: true  # All extended hours trades MUST have stop loss
+    type: "percentage"
+    percentage_stop: 2.0  # Tighter 2% stop loss
+    time_based_exit: true
+    max_holding_time: "2h"  # Maximum 2 hours holding time
+  
+  # Conservative take profit
+  take_profit:
+    enabled: true
+    type: "percentage"
+    profit_percent: 3.0  # Lower profit target (3% vs 5% regular hours)
+    quick_exit: true  # Exit faster in extended hours
+  
+  # Enhanced monitoring for extended hours
+  monitoring:
+    enhanced_alerts: true
+    real_time_tracking: true
+    volatility_threshold: 0.02  # Exit if volatility exceeds 2%
+    volume_requirement: 1.5  # Require 1.5x normal volume for entry
+  
+  # Time-based restrictions
+  time_restrictions:
+    no_new_positions_before_close: "15min"  # No new positions 15min before session end
+    forced_exit_before_close: "5min"  # Force exit 5min before session end
+    
+  # Market condition filters
+  market_filters:
+    max_market_volatility: 0.03  # Don't trade if market (SPY) volatility > 3%
+    require_trending_market: false  # Don't require trending for extended hours
+    avoid_earnings_announcements: true  # Avoid stocks with earnings same day
+
+# Review and Adjustment
+review:
+  # Periodic review schedule
+  daily_review: true
+  weekly_review: true
+  monthly_review: true
+  
+  # Auto-adjustment
+  auto_adjust_risk: true
+  adjust_frequency: "weekly"
+  adjustment_method: "performance_based"  # Increase risk if performing well
+  max_adjustment: 0.1  # Max 10% adjustment per period

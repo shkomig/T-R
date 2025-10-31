@@ -1,0 +1,172 @@
+# ==============================================================================
+# Professional .gitignore for Trading System Project
+# Based on Python, Data Science, and Financial Trading best practices
+# ==============================================================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments (CRITICAL for trading projects)
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+trading_env/
+.venv/
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# Operating System
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Trading System Specific
+# =======================
+
+# Configuration files with sensitive data
+config/api_credentials.yaml
+config/secrets.yaml
+config/.env
+.env
+*.env
+
+# Trading logs and data
+logs/
+*.log
+trading_logs/
+execution_logs/
+error_logs/
+
+# Market data and backtest results
+data/historical_data/
+data/market_data/
+data/backtest_results/
+data/live_data/
+data/cache/
+*.pkl
+*.pickle
+*.hdf5
+*.h5
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# Documentation builds
+docs/_build/
+site/
+
+# Testing
+.coverage
+.pytest_cache/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Profiling
+.prof
+
+# Financial data formats
+*.csv
+*.xls
+*.xlsx
+!example_data.csv
+!template_*.csv
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+.temp/
+
+# Archive and backup files
+*.bak
+*.backup
+archive_*/
+backup_*/
+
+# Large model files (if using ML)
+*.model
+*.joblib
+models/
+weights/
+
+# API keys and secrets (extra protection)
+*key*
+*secret*
+*token*
+*password*
+!requirements.txt
+!*_template.*
+!*_example.*
+
+# Interactive Brokers specific
+TWS API/
+*.xml
+gateway_logs/
+
+# Performance monitoring
+performance_data/
+monitoring_data/
+
+# Node modules (if any web dashboard)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==============================================================================
+# End of .gitignore
+# ==============================================================================

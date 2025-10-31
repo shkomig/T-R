@@ -1,0 +1,86 @@
+name: ✨ Feature Request
+description: Suggest a new feature or enhancement for the trading system
+title: "[FEATURE] "
+labels: ["enhancement", "feature-request"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Thank you for your feature suggestion! ✨
+        
+        Please describe the feature you'd like to see in the trading system.
+
+  - type: dropdown
+    id: feature-type
+    attributes:
+      label: 🎯 Feature Category
+      description: What type of feature is this?
+      options:
+        - Trading Strategy
+        - Risk Management
+        - Data Processing
+        - User Interface
+        - Performance/Optimization
+        - Integration
+        - Documentation
+        - Testing
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 🔍 Problem Statement
+      description: Is your feature request related to a problem? Please describe.
+      placeholder: I'm frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 💡 Proposed Solution
+      description: Describe the solution you'd like
+      placeholder: I would like to see...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 🔄 Alternatives Considered
+      description: Describe any alternative solutions you've considered
+      placeholder: I also considered...
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: 📊 Use Case
+      description: How would this feature benefit trading operations?
+      placeholder: This would help by...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: implementation
+    attributes:
+      label: 🚀 Implementation Considerations
+      description: Check all that apply
+      options:
+        - label: This requires changes to trading strategies
+        - label: This requires database/data model changes
+        - label: This requires new dependencies
+        - label: This affects risk management
+        - label: This requires UI changes
+        - label: This affects performance
+        - label: I'm willing to help implement this
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 📎 Additional Context
+      description: Add any other context, mockups, or examples
+      placeholder: Screenshots, diagrams, related links...
