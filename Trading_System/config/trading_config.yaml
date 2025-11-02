@@ -43,6 +43,8 @@ strategies:
     - "ema_cross"
     - "vwap"
     - "volume_breakout"
+    - "rsi_divergence"
+    - "advanced_volume_breakout"
   
   # EMA Cross Strategy (MORE AGGRESSIVE)
   ema_cross:
@@ -244,11 +246,21 @@ universe:
     - "AAPL"
     - "MSFT"
     - "GOOGL"
-    - "AMZN"
+    - "AMZN"   # Amazon - E-commerce/Cloud
+    - "AMD"    # Advanced Micro Devices - Semiconductors
+    - "ARM"    # ARM Holdings - Chip Design
+    - "TSM"    # Taiwan Semiconductor - Chip Manufacturing
     - "TSLA"
     - "NVDA"   # NVIDIA - AI/Chips
     - "META"   # Meta Platforms - Social Media
     - "NFLX"   # Netflix - Streaming
+    - "QBTS"   # D-Wave Quantum - Quantum Computing
+    - "ARQQ"   # Arqit Quantum - Quantum Encryption
+    - "IONQ"   # IonQ - Quantum Computing
+    - "DJT"    # Trump Media & Technology Group
+    - "PLTR"   # Palantir - Big Data Analytics
+    - "QQQ"    # Invesco QQQ Trust - NASDAQ-100 ETF
+    - "SPY"    # SPDR S&P 500 ETF Trust
   
   # Screener criteria
   screener:
@@ -324,6 +336,43 @@ performance:
     daily_summary: true
     weekly_report: true
     monthly_report: true
+
+  # RSI Divergence Strategy (85-86% Win Rate)
+  rsi_divergence:
+    enabled: true
+    rsi_period: 14
+    divergence_lookback: 10
+    overbought: 70
+    oversold: 30
+    min_divergence_strength: 0.6
+    volume_confirmation: true
+    conservative_mode: true  # Only highest probability setups
+    
+    # Risk management
+    stop_loss_percent: 4.0    # 4% stop loss
+    take_profit_percent: 6.0  # 6% profit target (1.5:1 R/R)
+    
+    # Filters
+    min_volume: 100000        # Minimum volume for liquidity
+    timeframe_filter: true    # Best on 1H-4H charts
+
+  # Advanced Volume Breakout Strategy (90% Win Rate)
+  advanced_volume_breakout:
+    enabled: true
+    lookback_period: 20
+    volume_spike_multiplier: 1.5  # Volume must be 1.5x average
+    min_breakout_percentage: 0.5  # 0.5% minimum breakout
+    profit_target_percentage: 4.0 # 4% profit target
+    stop_loss_percentage: 2.0     # 2% stop loss
+    min_liquidity_volume: 100000  # Minimum average volume
+    
+    # Timing filters
+    avoid_early_session: true     # Skip first 1.5 hours
+    best_in_earnings: true        # Works best in earnings periods
+    
+    # Risk management
+    max_position_size: 10000      # Maximum shares per position
+    pyramid_additions: false      # No pyramiding for now
 
 # Backtesting Settings
 backtesting:

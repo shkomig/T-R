@@ -18,6 +18,8 @@ from .mean_reversion_strategy import MeanReversionStrategy
 from .orb_strategy import ORBStrategy
 from .momentum_strategy import MomentumStrategy
 from .bollinger_bands_strategy import BollingerBandsStrategy
+from .rsi_divergence_strategy import RSIDivergenceStrategy
+from .advanced_volume_breakout_strategy import VolumeBreakoutStrategy as AdvancedVolumeBreakoutStrategy
 from .pairs_trading_strategy import PairsTradingStrategy
 
 __all__ = [
