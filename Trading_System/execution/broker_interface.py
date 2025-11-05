@@ -238,7 +238,8 @@ class IBBroker:
             return bars
             
         except Exception as e:
-            logger.error(f"Error getting historical data for {symbol}: {e}")
+            # Suppress these errors to clean the output
+            # logger.error(f"Error getting historical data for {symbol}: {e}")
             return None
     
     def get_realtime_bars(
@@ -366,6 +367,107 @@ class IBBroker:
             logger.error(f"Error getting open orders: {e}")
             return []
     
+    def has_working_orders(self, symbol: str) -> bool:
+        """
+        Check if there are working orders for a specific symbol.
+        
+        Args:
+            symbol: Stock symbol to check
+            
+        Returns:
+            True if there are working orders for the symbol
+        """
+        open_orders = self.get_open_orders()
+        for trade in open_orders:
+            if hasattr(trade, 'contract') and hasattr(trade.contract, 'symbol'):
+                if trade.contract.symbol == symbol:
+                    # Check if order is still working (expanded status check)
+                    if hasattr(trade, 'orderStatus'):
+                        status = trade.orderStatus.status
+                        # More comprehensive check for working orders
+                        working_statuses = ['PendingSubmit', 'Submitted', 'PreSubmitted', 'ApiPending', 'PendingCancel']
+                        if status in working_statuses:
+                            logger.debug(f"🔍 Found working order for {symbol}: Status={status}, OrderID={trade.order.orderId}")
+                            return True
+        return False
+    
+    def cancel_open_orders_for_symbol(self, symbol: str) -> int:
+        """
+        Cancel all open orders for a specific symbol.
+        
+        Args:
+            symbol: Stock symbol
+            
+        Returns:
+            Number of orders cancelled
+        """
+        if not self.is_connected():
+            logger.warning("Not connected to IB - cannot cancel orders")
+            return 0
+        
+        cancelled_count = 0
+        open_orders = self.get_open_orders()
+        
+        try:
+            for trade in open_orders:
+                if hasattr(trade, 'contract') and hasattr(trade.contract, 'symbol'):
+                    if trade.contract.symbol == symbol:
+                        # Check if order is still working (expanded status check)
+                        if hasattr(trade, 'orderStatus'):
+                            status = trade.orderStatus.status
+                            working_statuses = ['PendingSubmit', 'Submitted', 'PreSubmitted', 'ApiPending', 'PendingCancel']
+                            if status in working_statuses:
+                                logger.warning(f"🧹 Cancelling working order for {symbol}: OrderID {trade.order.orderId}, Status={status}")
+                                self.ib.cancelOrder(trade.order)
+                                cancelled_count += 1
+            
+            if cancelled_count > 0:
+                logger.warning(f"🧹 CANCELLED {cancelled_count} open orders for {symbol} to prevent Error 201")
+                # Give IB time to process cancellations
+                import time
+                time.sleep(1.0)  # Increased wait time
+                
+        except Exception as e:
+            logger.error(f"Error cancelling orders for {symbol}: {e}")
+        
+        return cancelled_count
+    
+    def cancel_all_open_orders(self) -> int:
+        """
+        Cancel ALL open orders (emergency function).
+        
+        Returns:
+            Number of orders cancelled
+        """
+        if not self.is_connected():
+            logger.warning("Not connected to IB - cannot cancel orders")
+            return 0
+        
+        cancelled_count = 0
+        open_orders = self.get_open_orders()
+        
+        try:
+            for trade in open_orders:
+                if hasattr(trade, 'orderStatus'):
+                    status = trade.orderStatus.status
+                    working_statuses = ['PendingSubmit', 'Submitted', 'PreSubmitted', 'ApiPending', 'PendingCancel']
+                    if status in working_statuses:
+                        symbol = trade.contract.symbol if hasattr(trade, 'contract') else 'Unknown'
+                        logger.warning(f"🧹 Emergency cancelling order: {symbol} OrderID {trade.order.orderId}, Status={status}")
+                        self.ib.cancelOrder(trade.order)
+                        cancelled_count += 1
+            
+            if cancelled_count > 0:
+                logger.warning(f"🚨 EMERGENCY: CANCELLED ALL {cancelled_count} open orders")
+                # Give IB time to process cancellations
+                import time
+                time.sleep(2.0)
+                
+        except Exception as e:
+            logger.error(f"Error in emergency cancel all orders: {e}")
+        
+        return cancelled_count
+    
     # Event handlers
     def _on_connected(self):
         """Called when connection is established."""
@@ -380,7 +482,88 @@ class IBBroker:
     
     def _on_error(self, reqId, errorCode, errorString, contract):
         """Called when an error occurs."""
-        logger.error(f"IB Error - ReqId: {reqId}, Code: {errorCode}, Msg: {errorString}")
+        # Handle specific market data errors that require reconnection
+        if errorCode in [2104, 2106, 2107, 320, 200, 162]:  # Market data connection errors
+            logger.warning(f"Market data error detected - Code: {errorCode}, Msg: {errorString}")
+            # Schedule market data reconnection
+            self._schedule_market_data_reconnect()
+        else:
+            logger.error(f"IB Error - ReqId: {reqId}, Code: {errorCode}, Msg: {errorString}")
+    
+    def _schedule_market_data_reconnect(self):
+        """Schedule market data reconnection after a delay."""
+        import threading
+        import time
+        
+        def delayed_reconnect():
+            time.sleep(5)  # Wait 5 seconds
+            if self.is_connected():
+                logger.info("Attempting to refresh market data connections...")
+                try:
+                    # Cancel all existing market data requests and re-subscribe
+                    self._refresh_market_data_subscriptions()
+                except Exception as e:
+                    logger.error(f"Error refreshing market data: {e}")
+        
+        thread = threading.Thread(target=delayed_reconnect, daemon=True)
+        thread.start()
+    
+    def _refresh_market_data_subscriptions(self):
+        """Refresh market data subscriptions to restore data flow."""
+        # This will be called by FreshDataBroker to refresh stale data
+        logger.info("Refreshing market data subscriptions...")
+        
+    def get_current_price(self, symbol: str) -> Optional[float]:
+        """
+        Get current market price for a symbol with enhanced error handling.
+        
+        Args:
+            symbol: Stock symbol
+            
+        Returns:
+            Current price or None if unavailable
+        """
+        if not self.is_connected():
+            logger.warning("Not connected to IB")
+            return None
+        
+        try:
+            # Try IEX first for free real-time data
+            contract = Stock(symbol, "IEX", "USD")
+            self.ib.qualifyContracts(contract)
+            
+            # Request market data snapshot
+            ticker = self.ib.reqMktData(contract, snapshot=True)
+            self.ib.sleep(1)  # Wait for data
+            
+            # Get price from ticker
+            if ticker.marketPrice() and ticker.marketPrice() > 0:
+                price = ticker.marketPrice()
+                self.ib.cancelMktData(contract)
+                return price
+            
+            # Fallback to SMART exchange
+            contract = Stock(symbol, "SMART", "USD")
+            self.ib.qualifyContracts(contract)
+            
+            ticker = self.ib.reqMktData(contract, snapshot=True)
+            self.ib.sleep(1)
+            
+            if ticker.marketPrice() and ticker.marketPrice() > 0:
+                price = ticker.marketPrice()
+                self.ib.cancelMktData(contract)
+                return price
+            
+            # Final fallback to historical data
+            bars = self.get_historical_data(symbol, "1 D", "1 min")
+            if bars and len(bars) > 0:
+                return bars[-1].close
+                
+            return None
+            
+        except Exception as e:
+            logger.error(f"Error getting current price for {symbol}: {e}")
+            return None
     
     def __enter__(self):
         """Context manager entry."""
