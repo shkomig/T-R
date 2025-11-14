@@ -86,32 +86,94 @@ take_profit:
         exit_size: 0.25  # REDUCED from 0.33
       # Remaining 50% stays until final target or stop - LET WINNERS RUN!
 
-# Position Limits
+# Position Limits (OPTIMIZED FOR MORE TRADES)
 position_limits:
-  max_positions: 8  # Increased from 5 to match trading_config.yaml
+  max_positions: 8  # INCREASED: 5 -> 8 (more concurrent positions)
   max_positions_per_symbol: 1
-  max_position_size_percent: 12.0  # Reduced to 12% (8 x 12% = 96% max exposure)
-  max_position_size_amount: 12000  # Reduced accordingly
-  
+  max_position_size_percent: 15.0  # REDUCED: 20 -> 15% (spread capital more)
+  max_position_size_amount: 20000  # USD
+
   # Sector exposure
   max_sector_exposure_percent: 30.0  # Max 30% in one sector
-  
+
   # Correlation limits
   max_correlation: 0.7  # Don't take positions with correlation > 0.7
+
+# Volatile Stock Risk Adjustments
+volatile_stocks:
+  # Define high volatility symbols
+  high_volatility_symbols:
+    # Meme stocks
+    - "GME"
+    - "AMC"
+    - "BYND"
+    - "HOOD"
+
+    # Crypto-exposed stocks
+    - "COIN"
+    - "MSTR"
+    - "RIOT"
+    - "MARA"
+
+    # High-beta small caps
+    - "UPST"
+    - "PLUG"
+    - "TLRY"
+    - "SOUN"
+    - "IONQ"
+
+  # Risk adjustments for volatile stocks
+  risk_adjustments:
+    # Reduce position size for volatile stocks
+    position_size_multiplier: 0.6  # 60% of normal size
+    max_risk_per_volatile_trade: 1.5  # Max 1.5% risk (vs 2% normal)
+
+    # Stop loss adjustments
+    stop_loss_multiplier: 1.5  # Wider stops (1.5x ATR vs normal)
+    use_atr_stops: true  # Always use ATR for volatile stocks
+
+    # Maximum exposure to volatile stocks
+    max_volatile_exposure_percent: 30.0  # Max 30% of portfolio in volatile stocks
+    max_volatile_positions: 2  # Max 2 volatile positions at once
+
+    # Additional filters
+    min_liquidity_multiplier: 2.0  # Require 2x normal volume
+    require_tighter_spreads: true  # Avoid wide bid-ask spreads
+
+    # Take profit adjustments
+    take_profit_multiplier: 1.5  # Target bigger moves (1.5x normal)
+    trailing_stop_activation: 3.0  # Require 3% gain before trailing
+
+  # Symbol-specific volatility categories
+  volatility_tiers:
+    extreme:  # Ultra-high volatility
+      symbols: ["GME", "AMC", "MSTR"]
+      position_size_multiplier: 0.4  # Only 40% of normal
+      max_risk_per_trade: 1.0  # Max 1% risk
+
+    high:  # High volatility
+      symbols: ["COIN", "RIOT", "MARA", "UPST", "PLUG", "TLRY"]
+      position_size_multiplier: 0.6  # 60% of normal
+      max_risk_per_trade: 1.5  # Max 1.5% risk
+
+    moderate_high:  # Above average volatility
+      symbols: ["NVDA", "AMD", "PLTR", "SNOW", "RIVN", "LCID"]
+      position_size_multiplier: 0.8  # 80% of normal
+      max_risk_per_trade: 1.8  # Max 1.8% risk
 
 # Trading Rules
 trading_rules:
   # Loss limits
-  max_consecutive_losses: 3  # Stop trading after 3 consecutive losses
-  cool_down_period: 24  # Hours to wait after hitting loss limit
-  
-  # Time-based rules
-  no_trade_first_minutes: 15  # Avoid first 15 minutes
-  no_trade_last_minutes: 15   # Avoid last 15 minutes
-  
+  max_consecutive_losses: 4  # INCREASED: 3 -> 4 (more forgiving)
+  cool_down_period: 12  # REDUCED: 24 -> 12 hours (back to trading faster)
+
+  # Time-based rules (OPTIMIZED FOR MORE TRADES)
+  no_trade_first_minutes: 5   # REDUCED: 15 -> 5 (trade earlier)
+  no_trade_last_minutes: 5    # REDUCED: 15 -> 5 (trade until close)
+
   # Volatility rules
-  max_volatility_percentile: 95  # Don't trade if volatility > 95th percentile
-  min_volatility_percentile: 5   # Don't trade if volatility < 5th percentile
+  max_volatility_percentile: 98  # INCREASED: 95 -> 98 (allow more volatile periods)
+  min_volatility_percentile: 2   # REDUCED: 5 -> 2 (allow calmer periods)
 
 # Drawdown Management
 drawdown:
@@ -176,50 +238,6 @@ emergency:
       - "market_crash"  # Defined as SPY down > 3% in day
       - "technical_failure"
     action: "close_all_positions"
-
-# Extended Hours Risk Management (More Conservative)
-extended_hours:
-  enabled: true
-  
-  # More conservative position limits for extended hours
-  position_limits:
-    max_positions: 3  # Reduced from 8 to 3 for extended hours
-    max_position_size_percent: 8.0  # Reduced from 12% to 8%
-    max_position_size_amount: 8000  # Reduced accordingly
-    max_total_exposure_percent: 24.0  # Max 24% total exposure (3 x 8%)
-  
-  # Stricter stop losses for extended hours
-  stop_loss:
-    mandatory: true  # All extended hours trades MUST have stop loss
-    type: "percentage"
-    percentage_stop: 2.0  # Tighter 2% stop loss
-    time_based_exit: true
-    max_holding_time: "2h"  # Maximum 2 hours holding time
-  
-  # Conservative take profit
-  take_profit:
-    enabled: true
-    type: "percentage"
-    profit_percent: 3.0  # Lower profit target (3% vs 5% regular hours)
-    quick_exit: true  # Exit faster in extended hours
-  
-  # Enhanced monitoring for extended hours
-  monitoring:
-    enhanced_alerts: true
-    real_time_tracking: true
-    volatility_threshold: 0.02  # Exit if volatility exceeds 2%
-    volume_requirement: 1.5  # Require 1.5x normal volume for entry
-  
-  # Time-based restrictions
-  time_restrictions:
-    no_new_positions_before_close: "15min"  # No new positions 15min before session end
-    forced_exit_before_close: "5min"  # Force exit 5min before session end
-    
-  # Market condition filters
-  market_filters:
-    max_market_volatility: 0.03  # Don't trade if market (SPY) volatility > 3%
-    require_trending_market: false  # Don't require trending for extended hours
-    avoid_earnings_announcements: true  # Avoid stocks with earnings same day
 
 # Review and Adjustment
 review:

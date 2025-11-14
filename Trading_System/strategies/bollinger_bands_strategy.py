@@ -53,7 +53,7 @@ class BollingerBandsStrategy(BaseStrategy):
         # Bandwidth filter (avoid tight squeezes)
         self.min_bandwidth_percent = config.get('min_bandwidth_percent', 2.0)
         
-        print(f"✓ Bollinger Bands Strategy initialized:")
+        print(f"[OK] Bollinger Bands Strategy initialized:")
         print(f"  - Period: {self.period}, Std Dev: {self.num_std}")
         print(f"  - Exit at middle: {self.exit_at_middle}")
         print(f"  - RSI confirmation: {self.rsi_confirmation}")

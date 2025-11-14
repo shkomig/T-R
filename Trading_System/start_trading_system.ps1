@@ -56,4 +56,4 @@ Write-Host "==================================================" -ForegroundColor
 Write-Host ""
 
 # הרצת המנוע
-python archive\test_files\test_live_trading.py full
+python test_live_trading.py full

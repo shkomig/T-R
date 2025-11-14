@@ -90,18 +90,18 @@ class MarketScanner:
     def start_scanning(self):
         """התחלת סריקה בזמן אמת"""
         if self.running:
-            print("🔍 Scanner already running")
+            print("[SCAN] Scanner already running")
             return
         
-        print("🚀 Starting real-time market scanner...")
-        print(f"📊 Watching {len(self.watchlist)} symbols")
-        print(f"⏱️  Scan interval: {self.scan_settings['scan_interval']} seconds")
+        print("[LAUNCH] Starting real-time market scanner...")
+        print(f"[CHART] Watching {len(self.watchlist)} symbols")
+        print(f"[TIME] Scan interval: {self.scan_settings['scan_interval']} seconds")
         
         self.running = True
         self.scan_thread = threading.Thread(target=self._scanning_loop, daemon=True)
         self.scan_thread.start()
         
-        print("✅ Market scanner started successfully!")
+        print("[OK] Market scanner started successfully!")
     
     def stop_scanning(self):
         """עצירת הסריקה"""
@@ -131,13 +131,13 @@ class MarketScanner:
                 
                 # הדפסת סטטיסטיקות
                 scan_time = time.time() - scan_start
-                print(f"🔍 Scan completed: {len(alerts)} alerts found in {scan_time:.1f}s")
+                print(f"[SCAN] Scan completed: {len(alerts)} alerts found in {scan_time:.1f}s")
                 
                 # המתנה לסריקה הבאה
                 time.sleep(self.scan_settings['scan_interval'])
                 
             except Exception as e:
-                print(f"❌ Scanner error: {e}")
+                print(f"[ERROR] Scanner error: {e}")
                 time.sleep(10)  # המתנה ארוכה יותר אם יש שגיאה
     
     def _scan_symbol(self, symbol: str) -> List[ScanResult]:
@@ -176,7 +176,7 @@ class MarketScanner:
             return alerts
             
         except Exception as e:
-            print(f"⚠️  Error scanning {symbol}: {e}")
+            print(f"[WARN] Error scanning {symbol}: {e}")
             return []
     
     def _get_current_data(self, symbol: str) -> Optional[Dict]:
@@ -400,18 +400,18 @@ class MarketScanner:
     def _print_alert(self, alert: ScanResult):
         """הדפסת אלרט למסך"""
         emoji_map = {
-            "CRITICAL": "🚨",
-            "HIGH": "🔥",
-            "MEDIUM": "⚡",
-            "LOW": "📊"
+            "CRITICAL": "[CRIT]",
+            "HIGH": "[HIGH]",
+            "MEDIUM": "[MED]",
+            "LOW": "[LOW]"
         }
         
         type_emoji_map = {
-            ScanType.VOLUME_BREAKOUT: "📈",
-            ScanType.PRICE_BREAKOUT: "💥",
-            ScanType.GAP_UP: "⬆️",
-            ScanType.GAP_DOWN: "⬇️",
-            ScanType.HIGH_MOMENTUM: "🚀"
+            ScanType.VOLUME_BREAKOUT: "[VOL]",
+            ScanType.PRICE_BREAKOUT: "[BREAK]",
+            ScanType.GAP_UP: "[GAP-UP]",
+            ScanType.GAP_DOWN: "[GAP-DN]",
+            ScanType.HIGH_MOMENTUM: "[MOMENTUM]"
         }
         
         emoji = emoji_map.get(alert.alert_level, "📊")

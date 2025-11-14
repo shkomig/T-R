@@ -54,7 +54,7 @@ class ORBStrategy(BaseStrategy):
         self.or_calculated = False
         self.current_date = None
         
-        print(f"✓ ORB Strategy initialized:")
+        print(f"[OK] ORB Strategy initialized:")
         print(f"  - Opening Range: {self.opening_range_minutes} minutes")
         print(f"  - Breakout Confirmation: {self.breakout_confirmation} bars")
         print(f"  - Min Range: {self.min_range_percent}%")

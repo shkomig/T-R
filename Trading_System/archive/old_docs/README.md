@@ -1,7 +1,20 @@
-# AI Trading System
+# Old Documentation Archive - README
+
+⚠️ **ARCHIVED DOCUMENTATION** - This directory contains superseded documentation from earlier development phases.
+
+## Archive Information
+**Archived Date**: 2025-11-10
+**Archived By**: MCP-20251110-004
+**Total Files**: 11
+
+---
+
+# AI Trading System (Archived Documentation)
 
 ## Overview
 Advanced automated trading system designed for stock traders, focusing on 30-minute candles with low-risk strategies and connection to Interactive Brokers (Port 7497).
+
+**Note**: This documentation is from October 29, 2025 and has been superseded by current documentation.
 
 ## Features
 - 🤖 AI-powered trading strategies

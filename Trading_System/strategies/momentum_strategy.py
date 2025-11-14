@@ -51,7 +51,7 @@ class MomentumStrategy(BaseStrategy):
         self.use_trend_filter = config.get('use_trend_filter', True)
         self.trend_ma_period = config.get('trend_ma_period', 200)
         
-        print(f"✓ Momentum Strategy initialized:")
+        print(f"[OK] Momentum Strategy initialized:")
         print(f"  - Lookback Period: {self.lookback_period} bars")
         print(f"  - Confirmation: {self.confirmation_bars} bars")
         print(f"  - Trailing Stop: {self.trailing_stop_percent}%")

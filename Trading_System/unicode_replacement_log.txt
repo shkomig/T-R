@@ -1,0 +1,13 @@
+Replaced 2x with [AUTO]
+Replaced 1x with [$]
+Replaced 1x with [$$$]
+Replaced 1x with [HOT]
+Replaced 1x with [UP]
+Replaced 1x with [DOWN]
+Replaced 1x with [STOP]
+Replaced 1x with [PLUG]
+Replaced 1x with [BRAIN]
+Replaced 4x with [PAUSE]
+Replaced 4x with 
+
+Total: 18 Unicode characters replaced

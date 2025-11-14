@@ -71,7 +71,7 @@ class PairsTradingStrategy(BaseStrategy):
         # Setup logger
         self.logger = logging.getLogger(f"PairsTrading.{self.pair_symbols[0]}-{self.pair_symbols[1]}")
         
-        print(f"✓ Pairs Trading Strategy initialized:")
+        print(f"[OK] Pairs Trading Strategy initialized:")
         print(f"  - Pair: {self.pair_symbols}")
         print(f"  - Entry Threshold: ±{self.entry_threshold}")
         print(f"  - Exit Threshold: ±{self.exit_threshold}")

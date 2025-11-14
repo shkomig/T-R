@@ -319,10 +319,10 @@ class RiskCalculator:
         summary.append(f"Daily Loss: ${metrics.daily_loss:.2f} "
                       f"({metrics.daily_loss_percent:.1f}%)")
         summary.append(f"Open Positions: {metrics.num_positions}/{self.max_positions}")
-        summary.append(f"Safe to Trade: {'YES ✅' if metrics.is_safe_to_trade else 'NO ❌'}")
+        summary.append(f"Safe to Trade: {'YES [OK]' if metrics.is_safe_to_trade else 'NO [ERROR]'}")
         
         if metrics.warnings:
-            summary.append("\n⚠️  Warnings:")
+            summary.append("\n[WARN] Warnings:")
             for warning in metrics.warnings:
                 summary.append(f"  - {warning}")
         

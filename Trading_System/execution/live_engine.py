@@ -19,6 +19,8 @@ import yaml
 from strategies.ema_cross_strategy import EMACrossStrategy
 from strategies.vwap_strategy import VWAPStrategy
 from strategies.volume_breakout_strategy import VolumeBreakoutStrategy
+from strategies.rsi_divergence_strategy import RSIDivergenceStrategy
+from strategies.advanced_volume_breakout_strategy import VolumeBreakoutStrategy as AdvancedVolumeBreakoutStrategy
 from strategies.base_strategy import SignalType, TradingSignal
 from execution.order_manager import OrderManager, OrderRequest, OrderSide, OrderType
 from execution.position_tracker import PositionTracker, Position, PositionSide
@@ -80,7 +82,6 @@ class LiveTradingEngine:
         # Trading state
         self.is_running = False
         self.is_market_hours = False
-        self.current_session = "closed"  # "regular", "pre_market", "after_hours", "closed"
         self.symbols: List[str] = []
         self.market_data: Dict[str, pd.DataFrame] = {}  # symbol -> DataFrame
         self.latest_bars: Dict[str, pd.Series] = {}     # symbol -> latest bar
@@ -179,6 +180,14 @@ class LiveTradingEngine:
         if 'volume_breakout' in enabled_strategies:
             self.strategies['volume_breakout'] = VolumeBreakoutStrategy(self.config)
             self.logger.info("Volume Breakout Strategy initialized")
+
+        if 'rsi_divergence' in enabled_strategies:
+            self.strategies['rsi_divergence'] = RSIDivergenceStrategy(name="RSI_Divergence", config=self.config.get('strategies', {}).get('RSI_Divergence', {}))
+            self.logger.info("RSI Divergence Strategy initialized")
+
+        if 'advanced_volume_breakout' in enabled_strategies:
+            self.strategies['advanced_volume_breakout'] = AdvancedVolumeBreakoutStrategy(name="Advanced_Volume_Breakout", config=self.config.get('strategies', {}).get('Advanced_Volume_Breakout', {}))
+            self.logger.info("Advanced Volume Breakout Strategy initialized")
     
     def _subscribe_market_data(self):
         """Subscribe to real-time market data for all symbols."""
@@ -294,70 +303,18 @@ class LiveTradingEngine:
                 time.sleep(5)
     
     def _check_market_hours(self):
-        """Check if market is currently open (including extended hours)."""
+        """Check if market is currently open."""
         now = datetime.now().time()
-        
-        # Get extended hours configuration
-        market_config = self.config.get('market', {})
-        trading_hours = market_config.get('trading_hours', {})
-        extended_hours = trading_hours.get('extended_hours', {})
-        
-        # Regular market hours
-        is_regular_hours = self.market_open <= now <= self.market_close
-        
-        # Extended hours check
-        is_extended_hours = False
-        extended_session_type = None
-        
-        if extended_hours.get('enabled', False):
-            # Pre-market: 4:00 AM - 9:30 AM
-            pre_market = extended_hours.get('pre_market', {})
-            pre_start = dt_time(4, 0)  # Default 4:00 AM
-            pre_end = dt_time(9, 30)   # Default 9:30 AM
-            
-            # After-hours: 4:00 PM - 8:00 PM
-            after_hours = extended_hours.get('after_hours', {})
-            after_start = dt_time(16, 0)  # Default 4:00 PM
-            after_end = dt_time(20, 0)    # Default 8:00 PM
-            
-            # Check if we're in pre-market
-            if pre_start <= now < pre_end:
-                is_extended_hours = True
-                extended_session_type = "pre_market"
-            
-            # Check if we're in after-hours
-            elif after_start < now <= after_end:
-                is_extended_hours = True
-                extended_session_type = "after_hours"
-        
-        # Overall market status
-        is_open = is_regular_hours or is_extended_hours
-        
-        # Store current session type
-        if is_regular_hours:
-            self.current_session = "regular"
-        elif is_extended_hours:
-            self.current_session = extended_session_type
-        else:
-            self.current_session = "closed"
+        is_open = self.market_open <= now <= self.market_close
         
         # State change
         if is_open != self.is_market_hours:
             self.is_market_hours = is_open
             
             if is_open:
-                session_msg = f"Market opened - {self.current_session} session"
-                self.logger.info(session_msg)
-                
-                if self.current_session == "regular":
-                    alert_msg = "📊 Market Opened - Regular Trading Active"
-                elif self.current_session == "pre_market":
-                    alert_msg = "🌅 Pre-Market Session Active"
-                else:  # after_hours
-                    alert_msg = "🌙 After-Hours Session Active"
-                
+                self.logger.info("Market opened")
                 self.alert_system.send_alert(
-                    alert_msg,
+                    "📊 Market Opened - Trading Active",
                     alert_type=AlertType.SYSTEM,
                     alert_level=AlertLevel.INFO
                 )
@@ -369,9 +326,8 @@ class LiveTradingEngine:
                     alert_level=AlertLevel.INFO
                 )
                 
-                # End of day summary (only at end of regular session)
-                if hasattr(self, 'current_session') and self.current_session == "regular":
-                    self._send_daily_summary()
+                # End of day summary
+                self._send_daily_summary()
     
     def _update_market_data(self):
         """Update market data for all symbols."""
@@ -409,10 +365,7 @@ class LiveTradingEngine:
                 self.logger.error(f"Failed to update data for {symbol}: {e}")
     
     def _generate_signals(self):
-        """Generate trading signals from all strategies (with extended hours support)."""
-        # Get active strategies based on current session
-        active_strategies = self._get_active_strategies()
-        
+        """Generate trading signals from all strategies."""
         for symbol in self.symbols:
             if symbol not in self.market_data:
                 continue
@@ -422,82 +375,56 @@ class LiveTradingEngine:
             # Check if we already have a position
             has_position = self.position_tracker.has_position(symbol)
             
-            # Generate signals from active strategies only
-            for strategy_name, strategy in active_strategies.items():
+            # Generate signals from each strategy
+            for strategy_name, strategy in self.strategies.items():
                 try:
-                    signal = strategy.generate_signal(df, symbol)
-                    
-                    if signal and signal.strength != 'NEUTRAL':
-                        self.signals_generated += 1
-                        
-                        self.logger.info(
-                            f"Signal: {signal.signal_type.value} {symbol} "
-                            f"({signal.strength}) from {strategy_name} [{self.current_session}]"
-                        )
-                        
-                        # Log signal
-                        self.trade_logger.log_signal(
-                            symbol,
-                            signal.signal_type.value,
-                            signal.strength,
-                            signal.price,
-                            strategy_name
-                        )
-                        
-                        # Send alert with session info
-                        session_prefix = ""
-                        if self.current_session == "pre_market":
-                            session_prefix = "🌅 [PRE] "
-                        elif self.current_session == "after_hours":
-                            session_prefix = "🌙 [AH] "
-                        
-                        self.alert_system.signal_alert(
-                            symbol,
-                            signal.signal_type.value,
-                            signal.strength,
-                            signal.price,
-                            f"{session_prefix}{strategy_name}"
-                        )
-                        
-                        # Process signal with extended hours risk management
-                        if signal.signal_type == SignalType.BUY and not has_position:
-                            self._process_buy_signal(signal, strategy_name)
-                        elif signal.signal_type == SignalType.SELL and has_position:
-                            self._process_sell_signal(signal, strategy_name)
-                
+                    # First, analyze the data to calculate indicators
+                    analyzed_data = strategy.analyze(df)
+
+                    # Then generate signals from the analyzed data
+                    signals = strategy.generate_signals(analyzed_data)
+
+                    # Process each signal returned (can be multiple)
+                    for signal in signals:
+                        # Set the symbol on the signal
+                        signal.symbol = symbol
+
+                        if signal and signal.strength != 'NEUTRAL':
+                            self.signals_generated += 1
+
+                            self.logger.info(
+                                f"Signal: {signal.signal_type.value} {symbol} "
+                                f"({signal.strength}) from {strategy_name}"
+                            )
+
+                            # Log signal
+                            self.trade_logger.log_signal(
+                                symbol,
+                                signal.signal_type.value,
+                                signal.strength,
+                                signal.price,
+                                strategy_name
+                            )
+
+                            # Send alert
+                            self.alert_system.signal_alert(
+                                symbol,
+                                signal.signal_type.value,
+                                signal.strength,
+                                signal.price,
+                                strategy_name
+                            )
+
+                            # Process signal
+                            if signal.signal_type == SignalType.BUY and not has_position:
+                                self._process_buy_signal(signal, strategy_name)
+                            elif signal.signal_type == SignalType.SELL and has_position:
+                                self._process_sell_signal(signal, strategy_name)
+
                 except Exception as e:
                     self.logger.error(
                         f"Error generating signal for {symbol} with {strategy_name}: {e}"
                     )
-
-    def _get_active_strategies(self) -> Dict:
-        """Get active strategies based on current session."""
-        if not hasattr(self, 'current_session'):
-            self.current_session = "regular"
-        
-        # During extended hours, use only approved strategies
-        if self.current_session in ["pre_market", "after_hours"]:
-            strategy_configs = self.config.get('strategies', {})
-            extended_config = strategy_configs.get('extended_hours', {})
-            
-            if extended_config.get('enabled', False):
-                extended_strategies = extended_config.get('strategies', {})
-                active_strategies = {}
-                
-                # Only include enabled extended hours strategies
-                for strategy_name, config in extended_strategies.items():
-                    if config.get('enabled', False) and strategy_name in self.strategies:
-                        active_strategies[strategy_name] = self.strategies[strategy_name]
-                        
-                self.logger.info(f"Extended hours - Active strategies: {list(active_strategies.keys())}")
-                return active_strategies
-            else:
-                # Extended hours disabled - no trading
-                self.logger.info("Extended hours trading disabled")
-                return {}
-        else:
-            # Regular hours - all strategies
-            return self.strategies
     
     def _process_buy_signal(self, signal: TradingSignal, strategy_name: str):
         """
@@ -672,12 +599,9 @@ class LiveTradingEngine:
                 )
     
     def _check_position_exits(self):
-        """Check if any positions should be closed due to stop loss/take profit (with extended hours support)."""
+        """Check if any positions should be closed due to stop loss/take profit."""
         if not self.position_tracker:
             return
-        
-        # Check for extended hours forced exits
-        self._check_extended_hours_exits()
         
         exits = self.position_tracker.check_exit_conditions()
         
@@ -722,74 +646,6 @@ class LiveTradingEngine:
                         position.current_price,
                         pnl
                     )
-
-    def _check_extended_hours_exits(self):
-        """Check for forced exits during extended hours."""
-        if not hasattr(self, 'current_session') or self.current_session == "regular":
-            return
-        
-        # Get extended hours configuration
-        risk_config_path = self.config.get('risk_config_path', 'config/risk_management.yaml')
-        with open(risk_config_path, 'r') as f:
-            risk_config = yaml.safe_load(f)
-        
-        extended_config = risk_config.get('extended_hours', {})
-        if not extended_config.get('enabled', False):
-            return
-        
-        time_restrictions = extended_config.get('time_restrictions', {})
-        forced_exit_time = time_restrictions.get('forced_exit_before_close', '5min')
-        
-        # Convert to minutes
-        if 'min' in forced_exit_time:
-            minutes_before_close = int(forced_exit_time.replace('min', ''))
-        else:
-            minutes_before_close = 5  # Default
-        
-        # Check if we're approaching session end
-        now = datetime.now().time()
-        
-        if self.current_session == "pre_market":
-            # Pre-market ends at 9:30 AM
-            session_end = dt_time(9, 30 - minutes_before_close)
-            if now >= session_end:
-                self._force_close_all_positions("Pre-market session ending")
-                
-        elif self.current_session == "after_hours":
-            # After-hours ends at 8:00 PM
-            session_end = dt_time(20 - (minutes_before_close // 60), 
-                                60 - (minutes_before_close % 60))
-            if now >= session_end:
-                self._force_close_all_positions("After-hours session ending")
-
-    def _force_close_all_positions(self, reason: str):
-        """Force close all positions with given reason."""
-        if not self.position_tracker:
-            return
-        
-        positions = list(self.position_tracker.positions.values())
-        
-        for position in positions:
-            self.logger.warning(f"Force closing position {position.symbol}: {reason}")
-            
-            # Create sell order
-            order_request = OrderRequest(
-                symbol=position.symbol,
-                side=OrderSide.SELL,
-                quantity=position.quantity,
-                order_type=OrderType.MARKET,
-                notes=f"FORCED EXIT: {reason}"
-            )
-            
-            success, message = self.order_manager.submit_order(order_request)
-            
-            if success:
-                # Alert about forced exit
-                self.alert_system.send_alert(
-                    f"⚠️ FORCED EXIT: {position.symbol} - {reason}",
-                    alert_type=AlertType.RISK,
-                    alert_level=AlertLevel.WARNING
-                )
     
     def _send_daily_summary(self):
         """Send end-of-day summary."""

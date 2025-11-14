@@ -30,7 +30,7 @@ class DataPoint:
 
 class DataFreshnessManager:
     """
-    🔄 מנהל רעננות נתונים - פתרון מקצועי לבעיית Stale Data
+    [REFRESH] מנהל רעננות נתונים - פתרון מקצועי לבעיית Stale Data
     
     Features:
     - Real-time staleness detection
@@ -72,7 +72,7 @@ class DataFreshnessManager:
             'cache_misses': 0
         }
         
-        logger.info("🔄 Data Freshness Manager initialized")
+        logger.info("[REFRESH] Data Freshness Manager initialized")
         
     def start_monitoring(self):
         """התחלת ניטור רעננות נתונים"""
@@ -84,14 +84,14 @@ class DataFreshnessManager:
                 name="DataFreshnessMonitor"
             )
             self.refresh_thread.start()
-            logger.info("🔄 Data freshness monitoring started")
+            logger.info("[REFRESH] Data freshness monitoring started")
     
     def stop_monitoring(self):
         """עצירת ניטור רעננות נתונים"""
         self.running = False
         if self.refresh_thread:
             self.refresh_thread.join(timeout=5)
-        logger.info("🔄 Data freshness monitoring stopped")
+        logger.info("[REFRESH] Data freshness monitoring stopped")
     
     def update_data(self, key: str, value: Any, source: str = "unknown") -> bool:
         """
@@ -131,7 +131,7 @@ class DataFreshnessManager:
             self.last_update_times[key] = now
             self.stats['total_requests'] += 1
             
-            logger.debug(f"✅ Data updated for {key}: {value} from {source}")
+            logger.debug(f"[OK] Data updated for {key}: {value} from {source}")
             return True
     
     def get_data(self, key: str, max_age_override: Optional[int] = None) -> Tuple[Any, bool]:
@@ -188,7 +188,7 @@ class DataFreshnessManager:
                 # מחיקת הנתונים הישנים כדי לכפות רענון
                 del self.data_cache[key]
                 self.stats['auto_refreshes'] += 1
-                logger.info(f"🔄 Forced refresh for {key}")
+                logger.info(f"[REFRESH] Forced refresh for {key}")
                 return True
             return False
     
@@ -298,19 +298,19 @@ class DataFreshnessManager:
                     time.sleep(1)
                     
             except Exception as e:
-                logger.error(f"❌ Error in refresh loop: {e}")
+                logger.error(f"[ERROR] Error in refresh loop: {e}")
                 time.sleep(5)
     
     def _trigger_broker_reconnect(self, stale_keys: list):
         """הפעלת התחברות מחדש לברוקר בגלל נתונים מיושנים"""
-        logger.warning(f"🔄 Triggering broker reconnect due to {len(stale_keys)} very stale keys")
+        logger.warning(f"[REFRESH] Triggering broker reconnect due to {len(stale_keys)} very stale keys")
         
         # הוספת callback לברוקר אם קיים
         if hasattr(self, '_broker_callback') and self._broker_callback:
             try:
                 self._broker_callback(stale_keys)
             except Exception as e:
-                logger.error(f"❌ Error calling broker callback: {e}")
+                logger.error(f"[ERROR] Error calling broker callback: {e}")
     
     def _check_broker_connection(self):
         """בדיקה תקופתית של חיבור הברוקר"""
@@ -318,17 +318,17 @@ class DataFreshnessManager:
             try:
                 self._connection_check_callback()
             except Exception as e:
-                logger.error(f"❌ Error checking broker connection: {e}")
+                logger.error(f"[ERROR] Error checking broker connection: {e}")
     
     def set_broker_callback(self, callback):
         """הגדרת callback לטיפול בבעיות ברוקר"""
         self._broker_callback = callback
-        logger.info("✅ Broker callback registered")
+        logger.info("[OK] Broker callback registered")
     
     def set_connection_check_callback(self, callback):
         """הגדרת callback לבדיקת חיבור"""
         self._connection_check_callback = callback
-        logger.info("✅ Connection check callback registered")
+        logger.info("[OK] Connection check callback registered")
 
 # יצירת instance גלובלי
 data_freshness_manager = DataFreshnessManager(

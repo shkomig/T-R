@@ -19,11 +19,6 @@ Date: October 29, 2025
 import sys
 import time
 from datetime import datetime
-from pathlib import Path
-
-# Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
 from execution.live_engine import LiveTradingEngine
 
 

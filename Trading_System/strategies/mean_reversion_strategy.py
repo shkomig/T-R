@@ -9,10 +9,10 @@ Strategy Logic:
 - EXIT: When Z-score returns to near 0
 
 Enhanced Features:
-- 📊 Multiple timeframe Z-Score
-- 🎯 Dynamic thresholds based on volatility
+- [CHART] Multiple timeframe Z-Score
+- [TARGET] Dynamic thresholds based on volatility
 - 🔒 Advanced risk management
-- 📈 Volume confirmation
+- [UP] Volume confirmation
 
 Expected Performance (Enhanced):
 - Win Rate: 65-75% (improved with filters)
@@ -54,7 +54,7 @@ class MeanReversionStrategy(BaseStrategy):
         self.max_holding_period = config.get('max_holding_period', 10)  # Max days to hold
         self.stop_loss_z = config.get('stop_loss_z', 3.0)  # Stop if Z-score goes more extreme
         
-        print(f"✓ Mean Reversion Strategy initialized:")
+        print(f"[OK] Mean Reversion Strategy initialized:")
         print(f"  - Lookback Period: {self.lookback_period} days")
         print(f"  - Entry Z-Score: ±{self.entry_z_score}")
         print(f"  - Exit Z-Score: ±{self.exit_z_score}")
@@ -79,7 +79,7 @@ class MeanReversionStrategy(BaseStrategy):
         # Calculate Z-Score
         df['z_score'] = (df['close'] - df['sma']) / df['std']
         
-        # 🚀 Enhanced Z-Score features
+        # [LAUNCH] Enhanced Z-Score features
         # Multi-timeframe Z-Score (short and long term)
         df['z_score_short'] = (df['close'] - df['close'].rolling(10).mean()) / df['close'].rolling(10).std()
         df['z_score_long'] = (df['close'] - df['close'].rolling(50).mean()) / df['close'].rolling(50).std()
@@ -128,7 +128,7 @@ class MeanReversionStrategy(BaseStrategy):
         current_price = data['close'].iloc[-1]
         current_volume = data['volume'].iloc[-1]
         
-        # 🚀 Enhanced signal variables
+        # [LAUNCH] Enhanced signal variables
         z_short = data['z_score_short'].iloc[-1]
         z_long = data['z_score_long'].iloc[-1]
         dynamic_threshold = data['dynamic_threshold'].iloc[-1]
@@ -153,7 +153,7 @@ class MeanReversionStrategy(BaseStrategy):
             if pd.isna(trend_sma):
                 return None
         
-        # === 🚀 ENHANCED LONG SIGNAL (Price oversold) ===
+        # === [LAUNCH] ENHANCED LONG SIGNAL (Price oversold) ===
         # Multiple confirmations for stronger signal
         long_conditions = [
             current_z < -dynamic_threshold,  # Dynamic threshold based on volatility
@@ -170,7 +170,7 @@ class MeanReversionStrategy(BaseStrategy):
             else:
                 return 'long'
         
-        # === 🚀 ENHANCED SHORT SIGNAL (Price overbought) ===
+        # === [LAUNCH] ENHANCED SHORT SIGNAL (Price overbought) ===
         short_conditions = [
             current_z > dynamic_threshold,  # Dynamic threshold
             z_short > 1.5,  # Short-term also overbought
