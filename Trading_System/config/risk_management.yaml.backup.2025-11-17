@@ -39,18 +39,18 @@ position_sizing:
     target_volatility: 0.15  # 15% annualized
     lookback_period: 20  # Days
 
-# Stop Loss Settings (OPTIMIZED FOR QUALITY - 2025-11-17)
+# Stop Loss Settings (OPTIMIZED)
 stop_loss:
   enabled: true
-  type: "atr"  # ATR-based for dynamic adaptation
-
+  type: "atr"  # Changed to ATR - more dynamic
+  
   # Percentage-based stop
   percentage:
-    stop_percent: 2.0  # RESTORED: Tighter control
-
-  # ATR-based stop (ACTIVE)
+    stop_percent: 2.5  # INCREASED from 1% - less premature stops
+    
+  # ATR-based stop (NOW ACTIVE)
   atr:
-    multiplier: 2.0  # RESTORED: Balance protection vs whipsaws
+    multiplier: 2.5  # INCREASED from 2.0 - wider stop
     period: 14
     
   # Fixed dollar amount
@@ -86,12 +86,12 @@ take_profit:
         exit_size: 0.25  # REDUCED from 0.33
       # Remaining 50% stays until final target or stop - LET WINNERS RUN!
 
-# Position Limits (OPTIMIZED FOR RISK CONTROL - 2025-11-17)
+# Position Limits (OPTIMIZED FOR MORE TRADES)
 position_limits:
-  max_positions: 5  # RESTORED: Better risk management
+  max_positions: 8  # INCREASED: 5 -> 8 (more concurrent positions)
   max_positions_per_symbol: 1
-  max_position_size_percent: 12.0  # REDUCED: Better diversification
-  max_position_size_amount: 15000  # USD (reduced for safety)
+  max_position_size_percent: 15.0  # REDUCED: 20 -> 15% (spread capital more)
+  max_position_size_amount: 20000  # USD
 
   # Sector exposure
   max_sector_exposure_percent: 30.0  # Max 30% in one sector
@@ -161,11 +161,11 @@ volatile_stocks:
       position_size_multiplier: 0.8  # 80% of normal
       max_risk_per_trade: 1.8  # Max 1.8% risk
 
-# Trading Rules (TIGHTENED - 2025-11-17)
+# Trading Rules
 trading_rules:
   # Loss limits
-  max_consecutive_losses: 3  # RESTORED: Stricter control
-  cool_down_period: 24  # RESTORED: Give system time to reset
+  max_consecutive_losses: 4  # INCREASED: 3 -> 4 (more forgiving)
+  cool_down_period: 12  # REDUCED: 24 -> 12 hours (back to trading faster)
 
   # Time-based rules (OPTIMIZED FOR MORE TRADES)
   no_trade_first_minutes: 5   # REDUCED: 15 -> 5 (trade earlier)

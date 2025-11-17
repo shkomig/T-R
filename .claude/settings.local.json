@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git mv:*)",
+      "Bash(python:*)",
+      "Bash(cat:*)",
+      "Bash(timeout 30 python:*)",
+      "Bash(execution/fresh_data_broker.py.restored)",
+      "Bash(execution/data_freshness_manager.py)",
+      "Bash(execution/advanced_orders.py)",
+      "Bash(risk_management/enhanced_position_sizer.py)",
+      "Bash(execution/signal_quality_enhancer.py)",
+      "Bash(execution/market_regime_detector.py)",
+      "Bash(monitoring/market_scanner.py)",
+      "Bash(charts/live_charts.py)",
+      "Bash(charts/__init__.py)",
+      "Bash(strategies/rsi_divergence_strategy.py)",
+      "Bash(strategies/advanced_volume_breakout_strategy.py)",
+      "Bash(timeout 45 python:*)",
+      "Bash(timeout 60 python:*)",
+      "Bash(Get-Process python -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object Id, ProcessName, StartTime, CPU)",
+      "Bash(netstat:*)",
+      "Bash(ps:*)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(findstr:*)",
+      "Bash(dir \"C:\\Vs-Pro\\TR\\Trading_System\")",
+      "mcp__ide__getDiagnostics"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

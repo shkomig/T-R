@@ -1,0 +1,198 @@
+{
+  "main": {
+    "id": "8cb5d2092a665820",
+    "type": "split",
+    "children": [
+      {
+        "id": "6f4d814167cb5806",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "831f863ccfe2997a",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "תצוגת גרף"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "242704cd1061fed4",
+    "type": "split",
+    "children": [
+      {
+        "id": "15cb17426e2f49b2",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "dcf2a79a6e1318bb",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "סייר קבצים"
+            }
+          },
+          {
+            "id": "7610bee6924b45b6",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "לחפש"
+            }
+          },
+          {
+            "id": "96d53d53b2337364",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "סימניות"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "3962ff661ceaf56b",
+    "type": "split",
+    "children": [
+      {
+        "id": "98d783532c49924c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "3315d7a1adbc760f",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "קישורים נכנסים"
+            }
+          },
+          {
+            "id": "6e356be1d9b9fc06",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "קישורים יוצאים"
+            }
+          },
+          {
+            "id": "11554258b0648fb2",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "תגים"
+            }
+          },
+          {
+            "id": "7715c1ef62b4b5dd",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "מתווה"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:פתח את המחליף המהיר": false,
+      "graph:פתח תצוגת גרף": false,
+      "canvas:צור קנבס חדש": false,
+      "daily-notes:פתח את ההערה של היום": false,
+      "templates:הכנס תבנית": false,
+      "command-palette:פתח את לוח הפקודות": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "831f863ccfe2997a",
+  "lastOpenFiles": [
+    "Trading_System/execution/live_engine.py.tmp.30920.1763062692084",
+    "Trading_System/strategies/__pycache__/simple_momentum_strategy.cpython-312.pyc",
+    "Trading_System/strategies/simple_momentum_strategy.py",
+    "Trading_System/check_live_data.py.tmp.64568.1762971346605",
+    "Trading_System/check_live_data.py",
+    "Trading_System/check_live_data.py.tmp.64568.1762971330125",
+    "Trading_System/debug_strategy_filters.py",
+    "Trading_System/test_signal_generation.py.tmp.64568.1762971248589",
+    "Trading_System/test_signal_generation.py.tmp.64568.1762971247878",
+    "Trading_System/test_signal_generation.py",
+    "Trading_System/simple_live_dashboard.py.tmp.64568.1762971202401",
+    "Trading_System/PHASE_2_KICKOFF_PLAN.md",
+    "Trading_System/UNICODE_FIX_VALIDATION_REPORT.md",
+    "Trading_System/SYSTEM_DIAGNOSTIC_REPORT.md",
+    "Trading_System/STARTUP_CHECKLIST.md",
+    "Trading_System/SYSTEM_STARTUP_GUIDE.md",
+    "Trading_System/PHASE_1_VALIDATION_REPORT.md",
+    "Trading_System/PHASE_1_COMPLETION_REPORT.md",
+    "Trading_System/MCP_REPORT_TEMPLATE.md",
+    "Trading_System/LIVE_TRADING_SUMMARY.md",
+    "Trading_System/LIVE_SYSTEM_TEST_REPORT.md",
+    "Trading_System/DEPLOYMENT_SUMMARY.md",
+    "Trading_System/DEPLOYMENT_LOG.md",
+    "Trading_System/DASHBOARD_ANALYSIS_REPORT.md",
+    "Trading_System/CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "T-R.md",
+    "Work_Plan.md",
+    "trading-strategies.md",
+    "Trading_System_Architecture.md"
+  ]
+}

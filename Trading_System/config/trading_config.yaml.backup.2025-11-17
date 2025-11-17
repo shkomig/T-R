@@ -29,16 +29,13 @@ broker:
   reconnect_delay: 10  # seconds
 
 # Strategy Settings
-# OPTIMIZED 2025-11-17: Reduced to top 3 performers for quality over quantity
 strategies:
   enabled:
-    - "vwap"                      # Core strategy - value/trend
-    - "rsi_divergence"           # 85-86% Win Rate
-    - "advanced_volume_breakout" # 90% Win Rate
-
-  disabled:  # Temporarily disabled for testing
     - "ema_cross"
+    - "vwap"
     - "volume_breakout"
+    - "rsi_divergence"           # NEW: 85-86% Win Rate
+    - "advanced_volume_breakout" # NEW: 90% Win Rate
   
   # EMA Cross Strategy (OPTIMIZED FOR MORE SIGNALS)
   ema_cross:
@@ -50,12 +47,12 @@ strategies:
     rsi_overbought: 80  # RELAXED: 75 -> 80 (less restrictive)
     rsi_oversold: 20    # RELAXED: 25 -> 20 (less restrictive)
     
-  # VWAP Strategy (OPTIMIZED FOR QUALITY - 2025-11-17)
+  # VWAP Strategy (OPTIMIZED FOR MORE SIGNALS)
   vwap:
     enabled: true
-    deviation_percent: 0.8  # RESTORED: Better quality signals
-    min_volume: 100000      # RESTORED: Adequate liquidity required
-    confirmation_bars: 2    # RESTORED: Reduce false signals
+    deviation_percent: 0.6  # REDUCED: 0.8 -> 0.6 (tighter entry for more signals)
+    min_volume: 50000       # REDUCED: 100K -> 50K
+    confirmation_bars: 1    # REDUCED: 2 -> 1 (faster entry)
     
   # Volume Breakout Strategy (OPTIMIZED FOR MORE SIGNALS)
   volume_breakout:
@@ -148,10 +145,25 @@ strategies:
     # Bandwidth filter
     min_bandwidth_percent: 1.0  # Lower bandwidth threshold
 
-  # NOTE: Mean_Reversion duplicate removed - see line 67 for main config
-
-  # Pairs Trading Strategy (Statistical Arbitrage) - DISABLED
-  # Re-enable after individual testing 
+  # Mean Reversion Strategy (Enhanced Z-Score)
+  Mean_Reversion:
+    enabled: true
+    lookback_period: 20         # Days for mean calculation
+    entry_z_score: 2.0          # Entry threshold (±2.0)
+    exit_z_score: 0.5           # Exit threshold (±0.5)
+    min_std: 0.001              # Minimum std to avoid division by zero
+    
+    # Enhanced features
+    use_dynamic_threshold: true  # Adjust threshold based on volatility
+    multi_timeframe: true       # Use multiple Z-Score timeframes
+    
+    # Filters
+    volume_filter: true         # Enable volume filtering
+    min_volume: 100000          # Minimum volume
+    trend_filter: false         # Optional trend filter
+    trend_period: 50            # Trend MA period
+    
+  # Pairs Trading Strategy (Statistical Arbitrage) 
   Pairs_Trading:
     enabled: true
     pair_symbols: ['AAPL', 'MSFT']  # Trading pair (Tech giants)
@@ -183,79 +195,91 @@ strategies:
     stop_loss_z: 3.0           # Stop if Z-score goes more extreme
     min_confirmations: 3        # Minimum conditions for signal
 
-  # RSI Divergence Strategy (85-86% Win Rate) - OPTIMIZED FOR QUALITY
+  # RSI Divergence Strategy (85-86% Win Rate) - OPTIMIZED
   RSI_Divergence:
     enabled: true
     rsi_period: 14                    # RSI calculation period
     divergence_lookback: 10           # Bars to look back for divergence
     overbought: 70                    # RSI overbought level
     oversold: 30                      # RSI oversold level
-    min_divergence_strength: 0.6      # RESTORED: Higher quality divergences
+    min_divergence_strength: 0.5      # REDUCED: 0.6 -> 0.5 (more signals)
     volume_confirmation: true         # Require volume spike
-    volume_filter: true               # ADDED: Safety filter
-    min_volume: 100000                # ADDED: Minimum volume requirement
-    conservative_mode: true           # CHANGED: Quality over quantity
+    conservative_mode: false          # CHANGED: More aggressive mode
 
-  # Advanced Volume Breakout Strategy (90% Win Rate) - OPTIMIZED FOR QUALITY
+  # Advanced Volume Breakout Strategy (90% Win Rate) - OPTIMIZED
   Advanced_Volume_Breakout:
     enabled: true
     lookback_period: 20               # Period for support/resistance
-    volume_spike_multiplier: 1.5      # RESTORED: Stronger confirmation
-    min_breakout_percentage: 0.5      # RESTORED: Clearer breakouts
-    profit_target_percentage: 3.0     # More realistic target
+    volume_spike_multiplier: 1.3      # REDUCED: 1.5 -> 1.3 (more sensitive)
+    min_breakout_percentage: 0.4      # REDUCED: 0.5 -> 0.4 (lower threshold)
+    profit_target_percentage: 4.0     # 4% profit target
     stop_loss_percentage: 2.0         # 2% stop loss
-    min_liquidity_volume: 100000      # RESTORED: Better liquidity
-    volume_filter: true               # ADDED: Safety filter
-    confirmation_bars: 1              # ADDED: Wait for confirmation
+    min_liquidity_volume: 50000       # REDUCED: 100K -> 50K
 
-# Signal Settings (OPTIMIZED FOR QUALITY - 2025-11-17)
+# Signal Settings (OPTIMIZED FOR MORE TRADES)
 signals:
-  require_confirmation: true   # RESTORED: Require multiple strategies
-  min_strategies_agreement: 2  # RESTORED: 2 strategies must agree
-  max_signals_per_day: 10      # RESTORED: Quality over quantity
+  require_confirmation: false  # CHANGED: Allow single strategy signals
+  min_strategies_agreement: 1  # REDUCED: 2 -> 1 (single strategy can trigger)
+  max_signals_per_day: 20      # INCREASED: 10 -> 20 (more opportunities)
 
-# Universe Settings (OPTIMIZED - 2025-11-17)
-# Reduced from 35 to 15 high-quality, liquid stocks
+# Universe Settings (Stocks to trade)
 universe:
+  # Add specific tickers or use screener
   tickers:
-    # TIER 1: Large Cap Tech (Most Liquid, Lower Volatility)
-    - "AAPL"   # Apple - Largest liquidity
-    - "MSFT"   # Microsoft - Stable growth
-    - "GOOGL"  # Alphabet - Strong fundamentals
-    - "AMZN"   # Amazon - E-commerce leader
-    - "NVDA"   # NVIDIA - AI/Chip leader
-    - "AMD"    # AMD - Chip growth
-    - "TSLA"   # Tesla - EV leader (volatile but liquid)
+    # Original Large Cap Tech
+    - "AAPL"
+    - "MSFT"
+    - "GOOGL"
+    - "AMZN"
+    - "TSLA"
 
-    # TIER 2: Growth Tech (Good Liquidity, Moderate Volatility)
-    - "META"   # Meta/Facebook - Social media
+    # High Volatility Tech Stocks (Earnings Plays)
+    - "NVDA"   # NVIDIA - AI/Chip volatility
+    - "AMD"    # Advanced Micro Devices
+    - "MSTR"   # MicroStrategy - Bitcoin exposure
     - "PLTR"   # Palantir - AI/Defense
     - "SNOW"   # Snowflake - Cloud data
-    - "COIN"   # Coinbase - Crypto (controlled exposure)
+    - "COIN"   # Coinbase - Crypto volatility
+    - "SHOP"   # Shopify - E-commerce
+    - "SQ"     # Block (Square) - Fintech
+    - "ROKU"   # Roku - Streaming
+    - "ZM"     # Zoom - Remote work
 
-    # TIER 3: High Volatility (Smaller Positions Only)
-    - "MSTR"   # MicroStrategy - Bitcoin proxy (limit exposure)
-    - "LCID"   # Lucid Motors - EV growth
+    # Meme Stocks (Higher Risk)
+    - "GME"    # GameStop - Original meme
+    - "AMC"    # AMC Entertainment
     - "RIVN"   # Rivian - EV startup
+    - "LCID"   # Lucid Motors - EV
+    - "HOOD"   # Robinhood - Trading platform
+    - "BYND"   # Beyond Meat - Alternative food
 
-  # REMOVED for stability:
-  # - GME, AMC, BYND, HOOD (meme stocks - too unpredictable)
-  # - UPST, PLUG, TLRY, SOUN, IONQ (too small/volatile)
-  # - RIOT, MARA (Bitcoin miners - prefer MSTR for crypto exposure)
-  # - NIO, XPEV (Chinese EV - regulatory risk)
-  # - AI, PATH, U, SHOP, ROKU, ZM, SOFI, DKNG (reduced universe)
+    # Volatile Small/Mid Caps
+    - "UPST"   # Upstart - AI lending
+    - "SOFI"   # SoFi Technologies - Fintech
+    - "DKNG"   # DraftKings - Sports betting
+    - "PLUG"   # Plug Power - Hydrogen
+    - "TLRY"   # Tilray - Cannabis
+    - "SOUN"   # SoundHound AI - Voice AI
+    - "IONQ"   # IonQ - Quantum computing
+    - "RIOT"   # Riot Platforms - Bitcoin mining
+    - "MARA"   # Marathon Digital - Bitcoin mining
+    - "NIO"    # NIO - Chinese EV
+    - "XPEV"   # XPeng - Chinese EV
+    - "AI"     # C3.ai - Enterprise AI
+    - "PATH"   # UiPath - Automation
+    - "U"      # Unity Software - Gaming engine
 
-  # Screener criteria (TIGHTENED - 2025-11-17)
+  # Screener criteria (adjusted for volatile stocks)
   screener:
-    min_price: 10         # Increased: Avoid penny stocks
-    max_price: 1000       # Allow high-priced stocks
-    min_avg_volume: 1000000  # Increased: Better liquidity (1M)
-    min_market_cap: 2000000000  # Increased: $2B+ only (more stable)
+    min_price: 5          # Lowered to capture volatile small caps
+    max_price: 1000       # Increased for high-priced volatile stocks
+    min_avg_volume: 500000  # Reduced to 500K for small caps
+    min_market_cap: 500000000  # Reduced to 500M for small/mid caps
 
-# Position Management (OPTIMIZED FOR RISK CONTROL - 2025-11-17)
+# Position Management (OPTIMIZED FOR MORE TRADES)
 position:
   sizing_method: "risk_based"  # fixed, risk_based, volatility_adjusted
-  max_positions: 5             # RESTORED: Better risk management
+  max_positions: 8             # INCREASED: 5 -> 8 (more concurrent positions)
   allow_pyramiding: false
   allow_hedging: false
 
