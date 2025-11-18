@@ -6,7 +6,7 @@ system:
   name: "AI Trading System"
   version: "3.0.1"  # Updated: v3.0.1 - Bug fixes and optimizations
   timezone: "Israel"  # IST/IDT (UTC+2/+3)
-  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  log_level: "DEBUG"  # DEBUG, INFO, WARNING, ERROR - Changed to DEBUG for troubleshooting
 
 # Market Settings
 # Note: Times are in US Eastern Time (NYSE/NASDAQ hours)
@@ -50,12 +50,14 @@ strategies:
     rsi_overbought: 80  # RELAXED: 75 -> 80 (less restrictive)
     rsi_oversold: 20    # RELAXED: 25 -> 20 (less restrictive)
     
-  # VWAP Strategy (OPTIMIZED FOR QUALITY - 2025-11-17)
+  # VWAP Strategy (TESTING MODE - More permissive)
   vwap:
     enabled: true
-    deviation_percent: 0.8  # RESTORED: Better quality signals
-    min_volume: 100000      # RESTORED: Adequate liquidity required
-    confirmation_bars: 2    # RESTORED: Reduce false signals
+    deviation_percent: 0.3  # TEMPORARY: Lower for more signals
+    min_volume: 50000       # TEMPORARY: Lower minimum
+    volume_threshold: 1.1   # TEMPORARY: Lower volume requirement
+    max_distance_percent: 3.0  # TEMPORARY: Allow further entries
+    min_distance_percent: 0.1  # TEMPORARY: Allow closer entries
     
   # Volume Breakout Strategy (OPTIMIZED FOR MORE SIGNALS)
   volume_breakout:
@@ -183,35 +185,35 @@ strategies:
     stop_loss_z: 3.0           # Stop if Z-score goes more extreme
     min_confirmations: 3        # Minimum conditions for signal
 
-  # RSI Divergence Strategy (85-86% Win Rate) - OPTIMIZED FOR QUALITY
+  # RSI Divergence Strategy (85-86% Win Rate) - TESTING MODE
   RSI_Divergence:
     enabled: true
     rsi_period: 14                    # RSI calculation period
     divergence_lookback: 10           # Bars to look back for divergence
     overbought: 70                    # RSI overbought level
     oversold: 30                      # RSI oversold level
-    min_divergence_strength: 0.6      # RESTORED: Higher quality divergences
-    volume_confirmation: true         # Require volume spike
-    volume_filter: true               # ADDED: Safety filter
-    min_volume: 100000                # ADDED: Minimum volume requirement
-    conservative_mode: true           # CHANGED: Quality over quantity
+    min_divergence_strength: 0.3      # TEMPORARY: Lower threshold for testing
+    volume_confirmation: false        # TEMPORARY: Disable for more signals
+    volume_filter: false              # TEMPORARY: Disable filter
+    min_volume: 50000                 # TEMPORARY: Lower minimum
+    conservative_mode: false          # TEMPORARY: More aggressive for testing
 
-  # Advanced Volume Breakout Strategy (90% Win Rate) - OPTIMIZED FOR QUALITY
+  # Advanced Volume Breakout Strategy (90% Win Rate) - TESTING MODE
   Advanced_Volume_Breakout:
     enabled: true
     lookback_period: 20               # Period for support/resistance
-    volume_spike_multiplier: 1.5      # RESTORED: Stronger confirmation
-    min_breakout_percentage: 0.5      # RESTORED: Clearer breakouts
+    volume_spike_multiplier: 1.2      # TEMPORARY: Lower for more signals
+    min_breakout_percentage: 0.3      # TEMPORARY: Lower threshold
     profit_target_percentage: 3.0     # More realistic target
     stop_loss_percentage: 2.0         # 2% stop loss
-    min_liquidity_volume: 100000      # RESTORED: Better liquidity
-    volume_filter: true               # ADDED: Safety filter
-    confirmation_bars: 1              # ADDED: Wait for confirmation
+    min_liquidity_volume: 50000       # TEMPORARY: Lower minimum
+    volume_filter: false              # TEMPORARY: Disable filter
+    confirmation_bars: 1              # Wait for confirmation
 
-# Signal Settings (OPTIMIZED FOR QUALITY - 2025-11-17)
+# Signal Settings (TESTING MODE - Less restrictive to see system in action)
 signals:
-  require_confirmation: true   # RESTORED: Require multiple strategies
-  min_strategies_agreement: 2  # RESTORED: 2 strategies must agree
+  require_confirmation: false  # TEMPORARY: Allow single strategy signals
+  min_strategies_agreement: 1  # TEMPORARY: Only 1 strategy needed
   max_signals_per_day: 10      # RESTORED: Quality over quantity
 
 # Universe Settings (OPTIMIZED - 2025-11-17)

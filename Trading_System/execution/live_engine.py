@@ -15,6 +15,7 @@ import time
 import pandas as pd
 from ib_insync import IB, Stock, util
 import yaml
+import pytz
 
 from strategies.ema_cross_strategy import EMACrossStrategy
 from strategies.vwap_strategy import VWAPStrategy
@@ -82,21 +83,28 @@ class LiveTradingEngine:
         # Trading state
         self.is_running = False
         self.is_market_hours = False
+        self.is_premarket = False
+        self.is_afterhours = False
         self.symbols: List[str] = []
         self.market_data: Dict[str, pd.DataFrame] = {}  # symbol -> DataFrame
         self.latest_bars: Dict[str, pd.Series] = {}     # symbol -> latest bar
-        
+
         # Settings
         self.broker_config = self.config.get('broker', {})
         self.paper_trading = self.config.get('development', {}).get('paper_trading', True)
-        self.update_interval = 30  # seconds (30 min bars)
+        self.update_interval = 300  # seconds (5 minutes = 300 seconds) - More trading opportunities
         self.initial_capital = 100000
         self.current_capital = self.initial_capital
-        
-        # Trading hours
+
+        # Timezone setup - US Eastern Time for market hours
+        self.eastern_tz = pytz.timezone('US/Eastern')
+
+        # Trading hours (all times in EST)
         market_hours = self.config.get('market', {}).get('trading_hours', {})
-        self.market_open = dt_time(9, 30)  # 9:30 AM
-        self.market_close = dt_time(16, 0)  # 4:00 PM
+        self.premarket_open = dt_time(4, 0)    # 4:00 AM EST
+        self.market_open = dt_time(9, 30)       # 9:30 AM EST
+        self.market_close = dt_time(16, 0)      # 4:00 PM EST
+        self.afterhours_close = dt_time(20, 0)  # 8:00 PM EST
         
         # Statistics
         self.signals_generated = 0
@@ -196,13 +204,14 @@ class LiveTradingEngine:
                 contract = Stock(symbol, 'SMART', 'USD')
                 
                 # Request historical data for initial bars
+                # Need at least 2-3 days of 30-min bars for indicators (96 bars = 2 days)
                 bars = self.ib.reqHistoricalData(
                     contract,
                     endDateTime='',
-                    durationStr='2 D',  # 2 days
+                    durationStr='5 D',  # 5 days to ensure enough data
                     barSizeSetting='30 mins',
                     whatToShow='TRADES',
-                    useRTH=True,
+                    useRTH=True,  # Use Regular Trading Hours only
                     formatDate=1
                 )
                 
@@ -281,18 +290,26 @@ class LiveTradingEngine:
                 
                 # Check for exit conditions on open positions
                 self._check_position_exits()
-                
-                # Only generate signals during market hours
-                if self.is_market_hours:
+
+                # Generate signals during ANY trading session (pre-market, regular, after-hours)
+                # Changed from checking only is_market_hours to support extended hours trading
+                trading_active = self.is_premarket or self.is_market_hours or self.is_afterhours
+
+                if trading_active:
                     # Check if it's time for next update (every 30 min)
                     now = datetime.now()
                     if (now - last_update).total_seconds() >= self.update_interval:
+                        # Log which session we're in
+                        session = "Regular" if self.is_market_hours else \
+                                 "Pre-Market" if self.is_premarket else "After-Hours"
+                        self.logger.info(f"Signal generation cycle - Session: {session}")
+
                         # Update market data
                         self._update_market_data()
-                        
+
                         # Generate signals
                         self._generate_signals()
-                        
+
                         last_update = now
                 
                 # Sleep briefly
@@ -303,75 +320,149 @@ class LiveTradingEngine:
                 time.sleep(5)
     
     def _check_market_hours(self):
-        """Check if market is currently open."""
-        now = datetime.now().time()
-        is_open = self.market_open <= now <= self.market_close
-        
-        # State change
-        if is_open != self.is_market_hours:
-            self.is_market_hours = is_open
-            
-            if is_open:
-                self.logger.info("Market opened")
+        """
+        Check if market is currently open (regular, pre-market, or after-hours).
+
+        Uses US Eastern Time for accurate market hours regardless of system timezone.
+        """
+        # Get current time in Eastern Time
+        now_est = datetime.now(self.eastern_tz).time()
+
+        # Determine market session
+        is_premarket = self.premarket_open <= now_est < self.market_open
+        is_regular = self.market_open <= now_est <= self.market_close
+        is_afterhours = self.market_close < now_est <= self.afterhours_close
+        is_any_session = is_premarket or is_regular or is_afterhours
+
+        # Log time info periodically (every 5 minutes) for debugging
+        if not hasattr(self, '_last_time_log') or \
+           (datetime.now() - self._last_time_log).total_seconds() > 300:
+            local_time = datetime.now()
+            self.logger.info(
+                f"Time Check - Local: {local_time.strftime('%H:%M:%S')}, "
+                f"EST: {now_est.strftime('%H:%M:%S')}, "
+                f"Pre: {is_premarket}, Regular: {is_regular}, After: {is_afterhours}"
+            )
+            self._last_time_log = datetime.now()
+
+        # Handle session transitions
+        # Pre-market transition
+        if is_premarket != self.is_premarket:
+            self.is_premarket = is_premarket
+            if is_premarket:
+                self.logger.info(f"⏰ Pre-Market Opened (EST: {now_est.strftime('%H:%M:%S')})")
                 self.alert_system.send_alert(
-                    "📊 Market Opened - Trading Active",
+                    f"🌅 Pre-Market Opened - Trading Available (EST: {now_est.strftime('%H:%M:%S')})",
+                    alert_type=AlertType.SYSTEM,
+                    alert_level=AlertLevel.INFO
+                )
+
+        # Regular market transition
+        if is_regular != self.is_market_hours:
+            self.is_market_hours = is_regular
+            if is_regular:
+                self.logger.info(f"📊 Market Opened (EST: {now_est.strftime('%H:%M:%S')})")
+                self.alert_system.send_alert(
+                    f"📊 Market Opened - Regular Trading Active (EST: {now_est.strftime('%H:%M:%S')})",
                     alert_type=AlertType.SYSTEM,
                     alert_level=AlertLevel.INFO
                 )
             else:
-                self.logger.info("Market closed")
+                self.logger.info(f"🔔 Market Closed (EST: {now_est.strftime('%H:%M:%S')})")
                 self.alert_system.send_alert(
-                    "🔴 Market Closed - Trading Paused",
+                    f"🔔 Regular Market Closed (EST: {now_est.strftime('%H:%M:%S')})",
                     alert_type=AlertType.SYSTEM,
                     alert_level=AlertLevel.INFO
                 )
-                
-                # End of day summary
+
+        # After-hours transition
+        if is_afterhours != self.is_afterhours:
+            self.is_afterhours = is_afterhours
+            if is_afterhours:
+                self.logger.info(f"🌙 After-Hours Opened (EST: {now_est.strftime('%H:%M:%S')})")
+                self.alert_system.send_alert(
+                    f"🌙 After-Hours Trading Available (EST: {now_est.strftime('%H:%M:%S')})",
+                    alert_type=AlertType.SYSTEM,
+                    alert_level=AlertLevel.INFO
+                )
+            else:
+                # End of all trading sessions for the day
+                self.logger.info(f"🔴 All Trading Sessions Closed (EST: {now_est.strftime('%H:%M:%S')})")
+                self.alert_system.send_alert(
+                    f"🔴 All Trading Sessions Closed - Trading Paused (EST: {now_est.strftime('%H:%M:%S')})",
+                    alert_type=AlertType.SYSTEM,
+                    alert_level=AlertLevel.INFO
+                )
+
+                # Send end-of-day summary when after-hours closes
                 self._send_daily_summary()
+
+        # Return whether any trading session is active
+        return is_any_session
     
     def _update_market_data(self):
         """Update market data for all symbols."""
         for symbol in self.symbols:
             try:
                 contract = Stock(symbol, 'SMART', 'USD')
-                
-                # Get latest bar
+
+                # Get latest bars (need enough for indicators)
                 bars = self.ib.reqHistoricalData(
                     contract,
                     endDateTime='',
-                    durationStr='1 D',
+                    durationStr='5 D',  # Get 5 days to ensure enough data for all indicators
                     barSizeSetting='30 mins',
                     whatToShow='TRADES',
-                    useRTH=True,
+                    useRTH=True,  # Use Regular Trading Hours only
                     formatDate=1
                 )
-                
-                if bars:
+
+                if bars and len(bars) > 0:
                     df = util.df(bars)
-                    df.columns = ['date', 'open', 'high', 'low', 'close', 'volume', 
-                                'average', 'barCount']
-                    df.set_index('date', inplace=True)
-                    
-                    # Update market data
-                    self.market_data[symbol] = df
-                    self.latest_bars[symbol] = df.iloc[-1]
-                    
-                    # Update position prices
-                    if self.position_tracker:
-                        current_price = float(df.iloc[-1]['close'])
-                        self.position_tracker.update_price(symbol, current_price)
-                
+                    if not df.empty:
+                        df.columns = ['date', 'open', 'high', 'low', 'close', 'volume',
+                                    'average', 'barCount']
+                        df.set_index('date', inplace=True)
+
+                        # Update market data ONLY if we have enough bars
+                        if len(df) >= 20:
+                            self.market_data[symbol] = df
+                            self.latest_bars[symbol] = df.iloc[-1]
+
+                            # Update position prices
+                            if self.position_tracker:
+                                current_price = float(df.iloc[-1]['close'])
+                                self.position_tracker.update_price(symbol, current_price)
+                        else:
+                            self.logger.warning(f"{symbol}: Received only {len(df)} bars, keeping existing data")
+                else:
+                    self.logger.warning(f"{symbol}: No bars received from IB, keeping existing data")
+
             except Exception as e:
                 self.logger.error(f"Failed to update data for {symbol}: {e}")
     
     def _generate_signals(self):
         """Generate trading signals from all strategies."""
+        total_signals_this_cycle = 0
+
         for symbol in self.symbols:
             if symbol not in self.market_data:
+                self.logger.warning(f"{symbol}: No market data available yet")
                 continue
-            
+
             df = self.market_data[symbol]
-            
+
+            # Validate DataFrame
+            if df is None or df.empty or len(df) < 20:
+                self.logger.warning(f"{symbol}: Insufficient data ({len(df) if df is not None else 0} bars), skipping signal generation")
+                continue
+
+            # DEBUG: Log latest bar info for first symbol only
+            if symbol == 'AAPL':
+                latest_bar = df.iloc[-1]
+                prev_bar = df.iloc[-2]
+                self.logger.info(f"AAPL Data - Latest: {latest_bar.name} C:{latest_bar['close']:.2f} V:{int(latest_bar['volume'])} | Prev: {prev_bar.name} C:{prev_bar['close']:.2f}")
+
             # Check if we already have a position
             has_position = self.position_tracker.has_position(symbol)
             
@@ -384,6 +475,13 @@ class LiveTradingEngine:
                     # Then generate signals from the analyzed data
                     signals = strategy.generate_signals(analyzed_data)
 
+                    # Log signals generated by this strategy
+                    num_signals = len(signals) if signals else 0
+                    if num_signals > 0:
+                        self.logger.info(f"{symbol} - {strategy_name}: Generated {num_signals} signal(s)")
+                    else:
+                        self.logger.debug(f"{symbol} - {strategy_name}: No signals")
+
                     # Process each signal returned (can be multiple)
                     for signal in signals:
                         # Set the symbol on the signal
@@ -391,9 +489,10 @@ class LiveTradingEngine:
 
                         if signal and signal.strength != 'NEUTRAL':
                             self.signals_generated += 1
+                            total_signals_this_cycle += 1
 
                             self.logger.info(
-                                f"Signal: {signal.signal_type.value} {symbol} "
+                                f"✓ Signal: {signal.signal_type.value} {symbol} "
                                 f"({signal.strength}) from {strategy_name}"
                             )
 
@@ -425,7 +524,10 @@ class LiveTradingEngine:
                     self.logger.error(
                         f"Error generating signal for {symbol} with {strategy_name}: {e}"
                     )
-    
+
+        # Summary log for this signal generation cycle
+        self.logger.info(f"Signal generation cycle complete: {total_signals_this_cycle} total signals generated")
+
     def _process_buy_signal(self, signal: TradingSignal, strategy_name: str):
         """
         Process buy signal.
@@ -693,12 +795,20 @@ class LiveTradingEngine:
     
     def _print_status(self):
         """Print current status."""
+        # Get current EST time
+        now_est = datetime.now(self.eastern_tz)
+
         print("\n" + "="*60)
         print("LIVE TRADING ENGINE STATUS")
         print("="*60)
         print(f"Running: {self.is_running}")
-        print(f"Market Hours: {self.is_market_hours}")
-        print(f"Paper Trading: {self.paper_trading}")
+        print(f"Current Time (EST): {now_est.strftime('%Y-%m-%d %H:%M:%S %Z')}")
+        print(f"\nTrading Sessions:")
+        print(f"  Pre-Market (04:00-09:30 EST): {self.is_premarket}")
+        print(f"  Regular Hours (09:30-16:00 EST): {self.is_market_hours}")
+        print(f"  After-Hours (16:00-20:00 EST): {self.is_afterhours}")
+        print(f"  Any Session Active: {self.is_premarket or self.is_market_hours or self.is_afterhours}")
+        print(f"\nPaper Trading: {self.paper_trading}")
         print(f"\nStatistics:")
         print(f"  Signals Generated: {self.signals_generated}")
         print(f"  Orders Placed: {self.orders_placed}")

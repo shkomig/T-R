@@ -25,7 +25,17 @@
       "Bash(Format-Table -AutoSize)",
       "Bash(findstr:*)",
       "Bash(dir \"C:\\Vs-Pro\\TR\\Trading_System\")",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(dir:*)",
+      "Bash(NUL)",
+      "Bash(timeout 3 ping:*)",
+      "Bash(tasklist:*)",
+      "Bash(taskkill /F /PID 59024 2)",
+      "Bash(powershell:*)",
+      "Bash(taskkill:*)",
+      "Bash(timeout 15 ping:*)",
+      "Bash(timeout 5 ping:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []
